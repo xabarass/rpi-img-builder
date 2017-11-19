@@ -3,11 +3,11 @@ REPO ?= Raspbian
 RPI ?= 2
 DIST_ARCH ?= armhf
 ARCH ?= rpix
-UNAME ?= pi
-UPASS ?= raspberry
+UNAME ?= scion
+UPASS ?= scion
 RPASS ?= raspberry
 LOCALE ?= en_US.UTF-8
-IMAGE_MB ?= -1
+IMAGE_MB ?= 6100
 BOOT_MB ?= 128
 INC_REC ?= 0
 

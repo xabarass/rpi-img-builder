@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+echo 'export GOPATH="$HOME/go"' >> ~/.profile
+echo 'export PATH="$HOME/.local/bin:$GOPATH/bin:$PATH:/usr/local/go/bin"' >> ~/.profile
+source ~/.profile
+
+mkdir -p "$GOPATH/src/github.com/netsec-ethz"
+cd "$GOPATH/src/github.com/netsec-ethz"
+
+git config --global url.https://github.com/.insteadOf git@github.com:
+
+cp -R /etc/default_scion_config/original_repo scion
+sudo chown -R scion:scion ./scion/
+
+patch ./scion/c/lib/scion/checksum_bench.c /etc/default_scion_config/patches_checksum_bench.patch
+patch ./scion/c/dispatcher/dispatcher.c /etc/default_scion_config/patches_dispatcher.patch
+
+cd scion
+
+# TODO: Fix dependency issues
+
+#bash -c 'yes | GO_INSTALL=true ./env/deps'
+
+#sudo cp docker/zoo.cfg /etc/zookeeper/conf/zoo.cfg
+
+# TODO: Correct gen folder
+
+# IMPORTANT! Remove no password from sudoers file!
+
+sudo rm /etc/sudoers.d/scion_installation
+
+systemctl start openvpn@client
+systemctl enable openvpn@client

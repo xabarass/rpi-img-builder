@@ -9,3 +9,7 @@ plugins.txt
 *~
 *.tmp
 *.tar*
+
+
+plugins/scion/files/etc/default_scion_config/*
+!plugins/scion/files/etc/default_scion_config/.gitkeep

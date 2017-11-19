@@ -2,3 +2,5 @@
 set -e
 
 adduser $1 input || true
+
+systemctl enable ssh.service

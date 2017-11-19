@@ -63,9 +63,9 @@ dpkg --configure -a
 
 # Make sure all apt keys are installed
 cd /apt-keys > /dev/null
-for i in *.asc; do
-	apt-key --keyring /etc/apt/trusted.gpg.d/${i%.*}.gpg add ${i}
-done
+# for i in *.asc; do
+# 	apt-key --keyring /etc/apt/trusted.gpg.d/${i%.*}.gpg add ${i}
+# done
 cd - > /dev/null
 
 # Set root password
@@ -84,23 +84,28 @@ adduser ${UNAME} video || true
 adduser ${UNAME} input || true
 adduser ${UNAME} tty || true
 
+echo "----- 1 -----"
 # Initialize /etc/apt/sources.list (remove multistrap from the filenames)
 for i in /etc/apt/sources.list.d/*; do
 	mv $i $(dirname $i)/$(echo $i | cut -d"-" -f2);
 done
 
+echo "----- 2 -----"
 apt-get update
 
+echo "----- 3 -----"
 APTOPTS="-y --assume-yes --force-yes"
 if [ "$INC_REC" == "0" ]; then
 	APTOPTS="$APTOPTS --no-install-recommends";
 fi
 
+echo "----- 4 -----"
 # Install extra packages
 if [ -f /packages.txt ]; then
 	apt-get $APTOPTS install $(cat /packages.txt);
 fi
 
+echo "----- 5 -----"
 # Run custom install scripts
 if [ -d /postinst ]; then
 	echo "Running custom postinst scripts"
@@ -112,6 +117,7 @@ else
 	echo "No custom postinst scripts found"
 fi
 
+echo "----- 6 -----"
 # Run custom install scripts for a specific distribution
 if [ -d /postinst/${DIST} ]; then
 	echo "Running custom ${DIST} postinst scripts"
@@ -123,6 +129,7 @@ else
 	echo "No custom ${DIST} postinst scripts found"
 fi
 
+echo "----- 7 -----"
 # Re-enable services to start
 rm -f /usr/sbin/policy-rc.d
 

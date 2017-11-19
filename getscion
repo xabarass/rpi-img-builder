@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Cloning SCION"
+
+cd plugins/scion/files/etc/default_scion_config
+
+git clone --recursive -b scionlab git@github.com:netsec-ethz/scion original_repo
+
+echo "Done"
