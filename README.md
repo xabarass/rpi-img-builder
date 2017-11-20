@@ -1,7 +1,27 @@
-rpi-img-builder
+rpi-img-builder 
 ===============
 
 Script to build custom sd card image for Raspberry Pi.
+
+## Building SCION image
+
+Clone scionlab repo
+```
+./getscion 
+```
+
+Create template image
+```
+su scion    # need this for chroot
+sudo make
+```
+
+Customize image
+```
+sudo ./packscion <img_name>.img user_directory
+```
+
+At the end, bz2 compressed image is created.
 
 ## Features:
 * Debian repository (Tested with Jessie and Stretch so far)
