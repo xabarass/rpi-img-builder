@@ -76,7 +76,3 @@ losetup_delete_retry $lodev
 
 echo "Compressing image"
 lbzip2 -zk $img_name
-
-# Enable OpenVPN
-systemctl start openvpn@client
-systemctl enable openvpn@client

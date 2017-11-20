@@ -29,5 +29,6 @@ cd scion
 
 sudo rm /etc/sudoers.d/scion_installation
 
+# Enable OpenVPN
 systemctl start openvpn@client
 systemctl enable openvpn@client
