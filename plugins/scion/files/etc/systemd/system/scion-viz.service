@@ -1,0 +1,13 @@
+[Unit]
+Description=SCION Visualization
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=scion
+WorkingDirectory=/home/scion/go/src/github.com/netsec-ethz/scion/sub/scion-viz/python/web
+Environment="PYTHONPATH=/home/scion/go/src/github.com/netsec-ethz/scion/python:/home/scion/go/src/github.com/netsec-ethz/scion"
+ExecStart=/usr/bin/python3 /home/scion/go/src/github.com/netsec-ethz/scion/sub/scion-viz/python/web/manage.py runserver 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target

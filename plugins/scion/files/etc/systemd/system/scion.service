@@ -1,0 +1,16 @@
+[Unit]
+Description=SCION infrastructure
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=scion
+WorkingDirectory=/home/scion/go/src/github.com/netsec-ethz/scion
+Environment="PATH=/home/scion/.local/bin:/home/scion/go/bin:/usr/local/go/bin:/home/scion/bin:/home/scion/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin" "GOPATH=/home/scion/go"
+ExecStart=/home/scion/go/src/github.com/netsec-ethz/scion/scion.sh run
+ExecStop=/home/scion/go/src/github.com/netsec-ethz/scion/scion.sh stop
+
+[Install]
+WantedBy=multi-user.target

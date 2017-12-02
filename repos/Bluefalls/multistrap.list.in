@@ -1,8 +1,0 @@
-[Bluefalls]
-packages=bluefalls-archive-keyring
-source=http://debian.bluefalls.ca/rpi
-keyring=bluefalls-archive-keyring
-components=main
-suite=testing
-omitdebsrc=true
-

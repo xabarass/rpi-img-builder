@@ -1,7 +1,0 @@
-[Foundation]
-packages=
-source=http://archive.raspberrypi.org/debian
-components=main ui
-suite=__FSUITE__
-omitdebsrc=true
-

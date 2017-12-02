@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -e
-
-sed -i /etc/default/rcS -e "s/^#FSCKFIX=no/FSCKFIX=yes/"
-
-#update-initramfs -u

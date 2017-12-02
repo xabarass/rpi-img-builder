@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+echo "Running user script"
+
+wget https://gist.githubusercontent.com/xabarass/7aa560a2ba9010d8dbb6f08029509ae5/raw/f533bd71e7a3bf0338a0fbb8ce5e1d55ccf9bca5/scion_install_script.sh
+
+chmod +x scion_install_script.sh
+
+./scion_install_script.sh -p "/install_files/scion/patches" -g "/install_files/scion/gen" -s "/install_files/scion/sysd/scion.service" -z "/install_files/scion/sysd/scion-viz.service"
+
+# IMPORTANT! Remove no password from sudoers file!
+sudo rm /etc/sudoers.d/scion_installation

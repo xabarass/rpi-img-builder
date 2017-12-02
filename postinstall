@@ -11,19 +11,16 @@ if [ "$(stat -c %d:%i /)" = "$(stat -c %d:%i /proc/1/root/.)" ]; then
 	exit 1;
 fi
 
-if [ "$#" -lt 8 ]; then
-	echo "Usage: $0 DIST ARCH LOCALE UNAME UPASS RPASS INC_REC UBOOT_DIR"
+if [ "$#" -lt 5 ]; then
+	echo "Usage: $0 LOCALE UNAME UPASS RPASS INC_REC"
 	exit 1
 fi
 
-DIST=$1
-ARCH=$2
-LOCALE=$3
-UNAME=$4
-UPASS=$5
-RPASS=$6
-INC_REC=$7
-UBOOT_DIR=$8
+LOCALE=$1
+UNAME=$2
+UPASS=$3
+RPASS=$4
+INC_REC=$5
 
 echo "Running postinstall script..."
 
@@ -36,12 +33,6 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 export LC_ALL=C LANGUAGE=C LANG=C
 export FLASH_KERNEL_SKIP=1
-export RIB_DIST=${DIST}
-if [ "${UBOOT_DIR}" = "rpi_3" ]; then
-	export FK_MACHINE="Raspberry Pi 3 Model B"
-else
-	export FK_MACHINE="Raspberry Pi 2 Model B"
-fi
 
 # Prevent apt-get from starting services
 echo "#!/bin/sh
@@ -51,12 +42,15 @@ chmod +x /usr/sbin/policy-rc.d
 
 # Set the locale
 echo "LANG=${LOCALE}" >> /etc/default/locale
+echo "LC_ALL=C" >> /etc/default/locale
+echo "LC_CTYPE=C" >> /etc/default/locale
+
 echo "locales locales/default_environment_locale select ${LOCALE}" | debconf-set-selections
 echo "locales locales/locales_to_be_generated select ${LOCALE} UTF-8" | debconf-set-selections
 
 # Finish multistrap
-/var/lib/dpkg/info/base-passwd.preinst install
-/var/lib/dpkg/info/dash.preinst install
+# /var/lib/dpkg/info/base-passwd.preinst install
+# /var/lib/dpkg/info/dash.preinst install
 dpkg --force-all --configure debconf 2>/dev/null || true
 dpkg --force-all --configure mawk 2>/dev/null || true
 dpkg --configure -a
@@ -85,10 +79,7 @@ adduser ${UNAME} input || true
 adduser ${UNAME} tty || true
 
 echo "----- 1 -----"
-# Initialize /etc/apt/sources.list (remove multistrap from the filenames)
-for i in /etc/apt/sources.list.d/*; do
-	mv $i $(dirname $i)/$(echo $i | cut -d"-" -f2);
-done
+
 
 echo "----- 2 -----"
 apt-get update
@@ -101,6 +92,7 @@ fi
 
 echo "----- 4 -----"
 # Install extra packages
+cat /packages.txt
 if [ -f /packages.txt ]; then
 	apt-get $APTOPTS install $(cat /packages.txt);
 fi
@@ -108,25 +100,23 @@ fi
 echo "----- 5 -----"
 # Run custom install scripts
 if [ -d /postinst ]; then
-	echo "Running custom postinst scripts"
+	echo "----- Running custom postinst root scripts -------"
 	for i in `find /postinst -maxdepth 1 -type f -executable -not -name "*~" | sort`; do
 		echo "  Running $i"
-		$i ${UNAME} ${UBOOT_DIR}
+		$i ${UNAME}
 	done
 else
 	echo "No custom postinst scripts found"
 fi
-
 echo "----- 6 -----"
-# Run custom install scripts for a specific distribution
-if [ -d /postinst/${DIST} ]; then
-	echo "Running custom ${DIST} postinst scripts"
-	for i in `find /postinst/${DIST} -maxdepth 1 -type f -executable -not -name "*~"`; do
+if [ -d /postinstusr ]; then
+	echo "----- Running custom postinst USR scripts -------"
+	for i in `find /postinstusr -maxdepth 1 -type f -executable -not -name "*~" | sort`; do
 		echo "  Running $i"
-		$i
+		su -c $i - ${UNAME}
 	done
 else
-	echo "No custom ${DIST} postinst scripts found"
+	echo "No custom postinst scripts found"
 fi
 
 echo "----- 7 -----"
@@ -135,8 +125,6 @@ rm -f /usr/sbin/policy-rc.d
 
 # Cleanup
 echo "Running clean up"
-rm -f /etc/hostname
-rm -f /etc/ssh/ssh_host_*
 apt-get autoclean
 apt-get clean
 dpkg --clear-avail

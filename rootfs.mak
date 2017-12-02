@@ -3,16 +3,15 @@ include common.mk
 .PHONY: all
 all: build
 
-.PHONY: clean
+.PHONY: clean $(ROOTFS_DIR).base
 clean: delete-rootfs
-	if mountpoint -q mnt; then \
-		umount mnt; \
+	if mountpoint -q $(ROOTFS_DIR).base; then \
+		umount $(ROOTFS_DIR).base; \
 	fi
-	rm -rf $(IMAGE_FILE)*.img *.img.tmp mnt multistrap.list *.example plugins.txt multistrap.err
 
-.PHONY: distclean
-distclean: delete-rootfs
-	rm -rf $(wildcard $(ROOTFS_DIR).base $(ROOTFS_DIR).base.tmp)
+	# rmdir $(ROOTFS_DIR).base
+
+	rm -rf *.img.tmp *.example plugins.txt
 
 .PHONY: delete-rootfs
 delete-rootfs:
@@ -28,92 +27,57 @@ delete-rootfs:
 	rm -rf $(wildcard $(ROOTFS_DIR) uInitrd)
 	
 .PHONY: build
-build: $(IMAGE_FILE)
+build: packimage
 
 $(ROOTFS_DIR).base:
 	rm -f plugins.txt
-	for j in $(REPOS); do \
-		for i in plugins/$$j/*; do \
-			if [ -f $$i/baseonly -a $$j != $(REPOBASE) ]; then \
-				continue; \
-			fi; \
-			if [ -f $$i/packages -o -f $$i/preinst -o -f $$i/postinst -o -d $$i/files -o -d $$i/patches ]; then \
-				echo $$i >> plugins.txt; \
-			fi; \
-		done; \
-	done
-	for i in plugins/$(DIST)/*; do \
-		if [ -f $$i/packages -o -f $$i/preinst -o -f $$i/postinst -o -d $$i/files -o -d $$i/patches ]; then \
-			echo $$i >> plugins.txt; \
-		fi; \
-	done
+
+	@echo "making directories"
+	mkdir -p $(ROOTFS_DIR).base
+
+	@echo "mounting them"
+	mount /dev/mapper/$(LOOP_DEV_NAME) $(ROOTFS_DIR).base
+
+	@echo "Collecting packages"
 	for i in plugins/*; do \
 		if [ -f $$i/packages -o -f $$i/preinst -o -f $$i/postinst -o -d $$i/files -o -d $$i/patches ]; then \
 			echo $$i >> plugins.txt; \
 		fi; \
 	done
-	@echo
-	@echo "Building $(IMAGE_FILE)_$(TIMESTAMP).img"
-	@echo "Repositories: $(REPOS)"
-	@echo "Base repositories: $(REPOBASE)"
-	@echo "Distribution: $(DIST)"
-	@echo "Repository architecture: $(DARCH)"
-	@echo "System architecture: $(ARCH)"
+
+	@echo "----- Installing ----"
 	@echo "Plugins: $$(cat plugins.txt | xargs | sed -e 's;plugins/;;g' -e 's; ;, ;g')"
 	@echo
-	@echo -n "5..."
-	@sleep 1
-	@echo -n "4..."
-	@sleep 1
-	@echo -n "3..."
-	@sleep 1
 	@echo -n "2..."
 	@sleep 1
 	@echo -n "1..."
 	@sleep 1
 	@echo "OK"
-	if test -d "$@.tmp"; then \
-		rm -rf "$@.tmp"; \
-	fi
-	mkdir -p $@.tmp/etc/apt/apt.conf.d
-	cp apt.conf $@.tmp/etc/apt/apt.conf.d/00multistrap
-	cat $(shell echo multistrap.list.in; for i in $(REPOS); do echo repos/$$i/multistrap.list.in; done | xargs) | sed -e 's,__REPOSITORIES__,$(REPOS),g' -e 's,__SUITE__,$(DIST),g' -e 's,__FSUITE__,$(FDIST),g' -e 's,__ARCH__,$(ARCH),g' > multistrap.list
-	multistrap --arch $(DARCH) --file multistrap.list --dir $@.tmp 2>multistrap.err || true
-	rm -f $@.tmp/etc/apt/apt.conf.d/00multistrap
-	if [ -f multistrap.err ]; then \
-		if grep -q '^E' multistrap.err; then \
-			echo; \
-			echo; \
-			echo "::: Something went wrong please review multistrap.err to figure out what."; \
-			echo; \
-			echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=; \
-			cat multistrap.err; \
-			echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=; \
-			echo; \
-			exit 1; \
-		fi; \
-	fi
-	cp `which $(QEMU)` $@.tmp/usr/bin
-	mkdir -p $@.tmp/usr/share/fatboothack/overlays
-	if test ! -f $@.tmp/etc/resolv.conf; then \
-		cp /etc/resolv.conf $@.tmp/etc/; \
-	fi
-	# No idea why multistrap does this
-	rm -f $@.tmp/lib64
-	ln -s /proc/mounts $@.tmp/etc/mtab
-	mv $@.tmp $@
+	
+	cp `which $(QEMU)` $@/usr/bin
+
 	touch $@
 
 $(ROOTFS_DIR): $(ROOTFS_DIR).base
 	rsync --quiet --archive --devices --specials --hard-links --acls --xattrs --sparse $(ROOTFS_DIR).base/* $@
-	mkdir $@/postinst
-	mkdir $@/apt-keys
+	mkdir -p $@/postinst
+	mkdir -p $@/postinstusr
+	mkdir -p $@/apt-keys
+	
+	mkdir -p $@/install_files
+	
 	touch $@/packages.txt
+
 	for i in $$(cat plugins.txt | xargs); do \
 		echo "Processing $$i..."; \
 		if [ -d $$i/files ]; then \
 			echo " - found files ... adding"; \
 			cd $$i/files && find . -type f ! -name '*~' -exec cp --preserve=mode,timestamps --parents \{\} $@ \;; \
+			cd $(BASE_DIR); \
+		fi; \
+		if [ -d $$i/install_files ]; then \
+			echo " - found install files ... adding"; \
+			cd $$i/install_files && find . -type f ! -name '*~' -exec cp --preserve=mode,timestamps --parents \{\} $@/install_files \;; \
 			cd $(BASE_DIR); \
 		fi; \
 		if [ -f $$i/packages ]; then \
@@ -129,13 +93,19 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 			echo " - found postinst ... adding"; \
 			cp $$i/postinst $@/postinst/$$(dirname $$i/postinst | rev | cut -d/ -f1 | rev)-$$(cat /dev/urandom | LC_CTYPE=C tr -dc "a-zA-Z0-9" | head -c 5); \
 		fi; \
+		if [ -f $$i/postinstusr ]; then \
+			echo " - found postinstusr ... adding"; \
+			cp $$i/postinstusr $@/postinstusr/$$(dirname $$i/postinstusr | rev | cut -d/ -f1 | rev)-$$(cat /dev/urandom | LC_CTYPE=C tr -dc "a-zA-Z0-9" | head -c 5); \
+		fi; \
 	done
 	chmod +x $@/postinst/*
+	chmod +x $@/postinstusr/*
 	cp postinstall $@
 	mount -o bind /proc $@/proc
 	mount -o bind /sys $@/sys
 	mount -o bind /dev $@/dev
-	chroot $@ /bin/bash -c "/postinstall $(DIST) $(ARCH) $(LOCALE) $(UNAME) $(UPASS) $(RPASS) $(INC_REC) $(UBOOT_DIR)"
+
+	chroot $@ /bin/bash -c "/postinstall $(LOCALE) $(UNAME) $(UPASS) $(RPASS) $(INC_REC)"
 	for i in $$(cat plugins.txt | xargs); do \
 		if [ -d $$i/patches ]; then \
 			for j in $$i/patches/*; do \
@@ -143,50 +113,28 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 			done; \
 		fi; \
 	done
-	if ls plugins/*/files/etc/hostname 1> /dev/null 2>&1; then \
-		cp plugins/*/files/etc/hostname $@/etc/hostname; \
-	fi
-	if ls plugins/$(DIST)/*/files/etc/hostname 1> /dev/null 2>&1; then \
-		cp plugins/$(DIST)/*/files/etc/hostname $@/etc/hostname; \
-	fi
-	if [ -f $@/etc/hostname ]; then \
-		if ! grep "^127.0.0.1\s*$$(cat $@/etc/hostname)\s*" $@/etc/hosts > /dev/null; then \
-			sed -i "1i 127.0.0.1\\t$$(cat $@/etc/hostname)" $@/etc/hosts; \
-		fi; \
-	fi
-	if [ -f $@/$(BOOT_DIR)/config.txt -a "$(DARCH)" = "arm64" ]; then \
-		if ! grep "arm_64bit=1" $@/$(BOOT_DIR)/config.txt > /dev/null; then \
-			echo "arm_64bit=1" >> $@/$(BOOT_DIR)/config.txt; \
-		fi; \
-	fi
-	wget --no-check-certificate https://github.com/RPi-Distro/firmware-nonfree/raw/master/brcm80211/brcm/brcmfmac43430-sdio.txt -O /tmp/brcmfmac43430-sdio.txt
-	mkdir -p $@/lib/firmware/brcm
-	cp /tmp/brcmfmac43430-sdio.txt $@/lib/firmware/brcm/
-	rm -rf /tmp/brcmfmac43430-sdio.txt
+	
 	umount $@/proc
 	umount $@/sys
 	umount $@/dev
 	rm -f $@/packages.txt
 	rm -f $@/postinstall
 	rm -rf $@/postinst/
+	rm -rf $@/postinstusr/
 	rm -rf $@/apt-keys/
 	rm -f $@/usr/bin/$(QEMU)
-	rm -f $@/etc/resolv.conf
+	rm -rf $@/install_files
 	touch $@
 
-$(IMAGE_FILE): $(ROOTFS_DIR)
-	if test -f "$@.img.tmp"; then \
-		rm "$@.img.tmp"; \
-	fi
-	./createimg $@.img.tmp $(BOOT_MB) $(ROOT_MB) $(BOOT_DIR) $(ROOTFS_DIR) "$(ROOT_DEV)"
-	mv $@.img.tmp $@_$(TIMESTAMP).img
-	@echo
-	@echo "Built $(IMAGE_FILE)_$(TIMESTAMP).img"
-	@echo "Repositories: $(REPOS)"
-	@echo "Base repositories: $(REPOBASE)"
-	@echo "Distribution: $(DIST)"
-	@echo "Repository architecture: $(DARCH)"
-	@echo "System architecture: $(ARCH)"
-	@echo "Plugins: $$(cat plugins.txt | xargs | sed -e 's;plugins/;;g' -e 's; ;, ;g')"
-	@echo
-	touch $@_$(TIMESTAMP).img
+packimage: $(ROOTFS_DIR)
+	@echo "Copying new data to image"
+
+	rm -rf $(ROOTFS_DIR).base/*
+	rsync --quiet --archive --devices --specials --hard-links --acls --xattrs --sparse $(ROOTFS_DIR)/* $(ROOTFS_DIR).base/
+
+	sync
+
+	@echo "Unmounting image file"
+	umount $(ROOTFS_DIR).base
+
+	@echo "SCION has been added to the image"
