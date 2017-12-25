@@ -28,6 +28,6 @@ chmod 600 "$rootfs_dir/$openvpn_dir/client.conf"
 sync
 
 # echo "Compressing image"
-# lbzip2 -zk $img_file
+lbzip2 -zk --fast $img_file
 
 echo "Done!"

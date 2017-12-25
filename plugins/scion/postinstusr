@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 
-echo "Running user script"
+echo "Running user script as $USER"
 
-wget https://gist.githubusercontent.com/xabarass/7aa560a2ba9010d8dbb6f08029509ae5/raw/f533bd71e7a3bf0338a0fbb8ce5e1d55ccf9bca5/scion_install_script.sh
+wget https://raw.githubusercontent.com/netsec-ethz/scion-coord/master/scion_install_script.sh
 
 chmod +x scion_install_script.sh
 
-./scion_install_script.sh -p "/install_files/scion/patches" -g "/install_files/scion/gen" -s "/install_files/scion/sysd/scion.service" -z "/install_files/scion/sysd/scion-viz.service"
+./scion_install_script.sh -p "/install_files/scion/patches" -a ~/.bash_aliases
+
+# Lets enable services
+sudo systemctl enable scion.service
+sudo systemctl enable scion-viz.service
+
+# We don't need this anymore
+rm scion_install_script.sh
 
 # IMPORTANT! Remove no password from sudoers file!
 sudo rm /etc/sudoers.d/scion_installation

@@ -12,13 +12,11 @@ fi
 
 img_file=$1
 
-dd if=/dev/zero bs=1M count=750 >> "$img_file"
+dd if=/dev/zero bs=1M count=1024 >> "$img_file"
 
 partitions=$(parted "$img_file" print free)
 
 extend_size=$(echo "$partitions" | awk 'END {print $(NF-3)}' | sed -r "s/([0-9]+)MB/\1/g") 
-
-echo "$extend_size"
 
 parted "$img_file" resizepart 2 "$extend_size"
 
@@ -29,7 +27,9 @@ loop_dev_name=$(echo "$kparted_out" | awk 'END {print $(3)}' )
 # Timing issue :/
 sleep 2
 
-sudo e2fsck -f "/dev/mapper/$loop_dev_name"
+sudo e2fsck -f -y "/dev/mapper/$loop_dev_name"
 sudo resize2fs "/dev/mapper/$loop_dev_name"
+
+sleep 2
 
 echo "$loop_dev_name"

@@ -5,6 +5,8 @@ all: build
 
 .PHONY: clean $(ROOTFS_DIR).base
 clean: delete-rootfs
+	@echo "clean"
+
 	if mountpoint -q $(ROOTFS_DIR).base; then \
 		umount $(ROOTFS_DIR).base; \
 	fi
@@ -15,6 +17,8 @@ clean: delete-rootfs
 
 .PHONY: delete-rootfs
 delete-rootfs:
+	@echo "Delete rootfs"
+
 	if mountpoint -q $(ROOTFS_DIR)/proc; then \
 		umount $(ROOTFS_DIR)/proc; \
 	fi
@@ -29,7 +33,7 @@ delete-rootfs:
 .PHONY: build
 build: packimage
 
-$(ROOTFS_DIR).base:
+$(ROOTFS_DIR).base: clean
 	rm -f plugins.txt
 
 	@echo "making directories"
@@ -67,6 +71,12 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 	mkdir -p $@/install_files
 	
 	touch $@/packages.txt
+
+	if test ! -f $@/etc/resolv.conf; then \
+		echo "There is no resolv.conf, copying from this system!"; \
+		rm -rf $@/etc/resolv.conf; \
+ 		cp /etc/resolv.conf $@/etc/; \
+ 	fi
 
 	for i in $$(cat plugins.txt | xargs); do \
 		echo "Processing $$i..."; \
