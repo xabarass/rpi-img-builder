@@ -20,12 +20,9 @@ extend_size=$(echo "$partitions" | awk 'END {print $(NF-3)}' | sed -r "s/([0-9]+
 
 parted "$img_file" resizepart 2 "$extend_size"
 
-kparted_out=$(kpartx -a -v "$img_file")
+kparted_out=$(kpartx -a -v -s "$img_file")
 
 loop_dev_name=$(echo "$kparted_out" | awk 'END {print $(3)}' )
-
-# Timing issue :/
-sleep 2
 
 sudo e2fsck -f -y "/dev/mapper/$loop_dev_name"
 sudo resize2fs "/dev/mapper/$loop_dev_name"
