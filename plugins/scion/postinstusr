@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+set -e
+
 echo "Running user script as $USER"
 
-wget https://raw.githubusercontent.com/netsec-ethz/scion-coord/master/scion_install_script.sh
+wget https://gist.githubusercontent.com/xabarass/7aa560a2ba9010d8dbb6f08029509ae5/raw/e9991bbba17270dea7bdc2adc77fe78e394a69eb/scion_install_script.sh
 
 chmod +x scion_install_script.sh
 
