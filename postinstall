@@ -79,7 +79,8 @@ adduser ${UNAME} input || true
 adduser ${UNAME} tty || true
 
 echo "----- 1 -----"
-
+echo "Adding Google DNS to resolv.conf"
+echo "nameserver 8.8.8.8" > /etc/resolv.conf;
 
 echo "----- 2 -----"
 apt-get update
@@ -125,6 +126,7 @@ rm -f /usr/sbin/policy-rc.d
 
 # Cleanup
 echo "Running clean up"
+rm -f /etc/ssh/ssh_host_*
 apt-get autoclean
 apt-get clean
 dpkg --clear-avail

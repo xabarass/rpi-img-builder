@@ -72,12 +72,6 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 	
 	touch $@/packages.txt
 
-	if test ! -f $@/etc/resolv.conf; then \
-		echo "There is no resolv.conf, copying from this system!"; \
-		rm -rf $@/etc/resolv.conf; \
- 		cp /etc/resolv.conf $@/etc/; \
- 	fi
-
 	for i in $$(cat plugins.txt | xargs); do \
 		echo "Processing $$i..."; \
 		if [ -d $$i/files ]; then \
