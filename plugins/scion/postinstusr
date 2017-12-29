@@ -14,6 +14,3 @@ sudo systemctl enable scion-viz.service
 
 # We don't need this anymore
 rm scion_install_script.sh
-
-# IMPORTANT! Remove no password from sudoers file!
-sudo rm /etc/sudoers.d/scion_installation
