@@ -1,1 +1,17 @@
-apt-utils ca-certificates sudo openssh-server ntpdate initramfs-tools ifupdown net-tools crda whiptail parted man-db udev libpam-systemd util-linux nano vim
+apt-utils
+ca-certificates
+sudo
+openssh-server
+ntpdate
+initramfs-tools
+ifupdown
+net-tools
+crda
+whiptail
+parted
+man-db
+udev
+libpam-systemd
+util-linux
+nano
+vim

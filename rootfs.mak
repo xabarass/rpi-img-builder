@@ -49,6 +49,13 @@ $(ROOTFS_DIR).base: clean
 		fi; \
 	done
 
+	@echo "Collecting board custom packages"
+	for i in plugins/board_custom/$(BOARD_NAME); do \
+		if [ -f $$i/packages -o -f $$i/preinst -o -f $$i/postinst -o -d $$i/files -o -d $$i/patches ]; then \
+			echo $$i >> plugins.txt; \
+		fi; \
+	done
+
 	@echo "----- Installing ----"
 	@echo "Plugins: $$(cat plugins.txt | xargs | sed -e 's;plugins/;;g' -e 's; ;, ;g')"
 	@echo

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Running ODROID custom script to remove unnecessary services..."
+echo "Removing cups"
+apt-get autoremove cups
+apt-get autoremove cups-*
+
+echo "avahi daemon"
+apt-get autoremove avahi-daemon
+apt-get autoremove avahi-dnsconfd
