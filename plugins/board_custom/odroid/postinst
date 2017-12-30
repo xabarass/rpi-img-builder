@@ -4,9 +4,9 @@ set -e
 
 echo "Running ODROID custom script to remove unnecessary services..."
 echo "Removing cups"
-apt-get autoremove cups
-apt-get autoremove cups-*
+apt-get -y --assume-yes --force-yes autoremove cups
+apt-get -y --assume-yes --force-yes autoremove cups-*
 
 echo "avahi daemon"
-apt-get autoremove avahi-daemon
-apt-get autoremove avahi-dnsconfd
+apt-get -y --assume-yes --force-yes autoremove avahi-daemon
+apt-get -y --assume-yes --force-yes autoremove avahi-dnsconfd
