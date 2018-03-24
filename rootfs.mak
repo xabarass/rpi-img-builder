@@ -19,15 +19,8 @@ clean: delete-rootfs
 delete-rootfs:
 	@echo "Delete rootfs"
 
-	if mountpoint -q $(ROOTFS_DIR)/proc; then \
-		umount $(ROOTFS_DIR)/proc; \
-	fi
-	if mountpoint -q $(ROOTFS_DIR)/sys; then \
-		umount $(ROOTFS_DIR)/sys; \
-	fi
-	if mountpoint -q $(ROOTFS_DIR)/dev; then \
-		umount $(ROOTFS_DIR)/dev; \
-	fi
+	ssh $(DEVICE_USER)@$(DEVICE_IP) 'bash -s' < $(BASE_DIR)/device_cleanup.sh $(DEVICE_MOUNT_ROOTFS)
+
 	rm -rf $(wildcard $(ROOTFS_DIR) uInitrd)
 	
 .PHONY: build
@@ -64,8 +57,6 @@ $(ROOTFS_DIR).base: clean
 	@echo -n "1..."
 	@sleep 1
 	@echo "OK"
-	
-	cp `which $(QEMU)` $@/usr/bin
 
 	touch $@
 
@@ -118,11 +109,9 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 	chmod +x $@/postinst/*
 	chmod +x $@/postinstusr/*
 	cp postinstall $@
-	mount -o bind /proc $@/proc
-	mount -o bind /sys $@/sys
-	mount -o bind /dev $@/dev
 
-	chroot $@ /bin/bash -c "/postinstall $(LOCALE) $(UNAME) $(UPASS) $(RPASS) $(INC_REC)"
+	ssh $(DEVICE_USER)@$(DEVICE_IP) 'bash -s' < $(BASE_DIR)/device_run.sh $(DEVICE_MOUNT_ROOTFS) $(LOCALE) $(UNAME) $(UPASS) $(RPASS) $(INC_REC)
+
 	for i in $$(cat plugins.txt | xargs); do \
 		if [ -d $$i/patches ]; then \
 			for j in $$i/patches/*; do \
@@ -131,15 +120,13 @@ $(ROOTFS_DIR): $(ROOTFS_DIR).base
 		fi; \
 	done
 	
-	umount $@/proc
-	umount $@/sys
-	umount $@/dev
+	ssh $(DEVICE_USER)@$(DEVICE_IP) 'bash -s' < $(BASE_DIR)/device_cleanup.sh $(DEVICE_MOUNT_ROOTFS)
+
 	rm -f $@/packages.txt
 	rm -f $@/postinstall
 	rm -rf $@/postinst/
 	rm -rf $@/postinstusr/
 	rm -rf $@/apt-keys/
-	rm -f $@/usr/bin/$(QEMU)
 	rm -rf $@/install_files
 	touch $@
 
